@@ -10,8 +10,6 @@ function clock_tick() {
 
   var str = hours + ":" + minutes + ":" + seconds;
 
-  console.log(str);
-
   counter.update(str);
 }
 
