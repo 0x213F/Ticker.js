@@ -2,6 +2,10 @@
 
 Ticker.js is a light-weight UI component for scrolling text inspired by [Robinhood](https://github.com/robinhood/ticker) that has no dependencies.
 
+## Demo
+
+Watch a 24-hour clock over at [http://schultheiss.io/Ticker.js](http://schultheiss.io/Ticker.js).
+
 ## Quick Start
 
 To get started, include the `ticker.min.css` and `ticker.min.js` files in your project. Then, wrap your dynamic text in a tag with an id:
@@ -36,8 +40,8 @@ This works best with monospace fonts and can only handle fixed length strings.
 
 ## Author
 
-**Joshua Schultheiss**
+**Joshua Schultheiss** - [http://schultheiss.io](http://schultheiss.io)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License.
