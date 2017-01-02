@@ -31,7 +31,7 @@ var price = new Ticker("price", ['$','.','0','1','2','3','4','5','6','7','8','9'
 To update the ticker with a new value call the following method:
 
 ```
-price.update("41.10");
+price.update("$41.10");
 ```
 ### Limitations
 
