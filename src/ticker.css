@@ -1,0 +1,12 @@
+ticker {
+  position: relative;
+  padding-top: 1em;
+  height: 1em;
+  overflow: hidden;
+}
+
+ticker_mask {
+  overflow: hidden;
+  position: relative;
+  display: inline-block;
+}
