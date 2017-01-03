@@ -1,4 +1,9 @@
 function clock_tick() {
+  if(counter === undefined) {
+    clearInterval(tick);
+    return;
+  }
+
   var date = new Date();
   var hours = date.getHours();
   var minutes = date.getMinutes();
@@ -16,4 +21,4 @@ function clock_tick() {
 var counter = new Ticker("time", [':','0','1','2','3','4','5','6','7','8','9'], 500);
 
 clock_tick();
-setInterval(clock_tick ,1000);
+var tick = setInterval(clock_tick ,1000);
