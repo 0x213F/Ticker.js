@@ -2,7 +2,7 @@
 var TickerCount = 0;
 
 // Constructor
-var Ticker = function(id, alphabet, rate, init) {
+var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
   // set the time it takes for transition
   var rate = rate === undefined ? 500 : rate;
@@ -20,7 +20,27 @@ var Ticker = function(id, alphabet, rate, init) {
   var internal_id = TickerCount;
   TickerCount++;
 
-  this.initialize = function() {
+  //
+  var transition;
+  if(typeof easing === "function") transition = easing;
+  else {
+    switch (easing) {
+      case "linear":
+        transition = function(t, time_delta, rate) { return t; };
+        break;
+      case "easeInOutQuad":
+        transition = function(t, time_delta, rate) { return rate / 2 > time_delta ? 2*Math.pow(t,2) : -2*Math.pow(t-1,2) + 1; };
+        break;
+      case "easeInOutSine":
+        transition = function(t, time_delta, rate) { return -0.5*Math.cos(10*t/Math.PI) + 0.5; };
+        break;
+      default: // "easeInOutQuad"
+        transition = function(t, time_delta, rate) { return rate / 2 > time_delta ? 2*Math.pow(t,2) : -2*Math.pow(t-1,2) + 1; };
+        break;
+    }
+  }
+
+  this.initialize = function(callback) {
 
     function GetNext(idx) {
       return idx == alphabet.length - 1 ? alphabet[0] : alphabet[Number(idx) + 1];
@@ -59,6 +79,9 @@ var Ticker = function(id, alphabet, rate, init) {
       parent.appendChild(child);
     }
 
+    // run optional callback function
+    if(typeof callback === "function") callback();
+
     // [1] === http://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
     // [2] === http://stackoverflow.com/questions/1720320/how-to-dynamically-create-css-class-in-javascript-and-apply
 
@@ -71,11 +94,12 @@ var Ticker = function(id, alphabet, rate, init) {
     return;
   }
 
-  this.update = function(target) {
+  this.update = function(target, callback) {
 
     function animate(curr, num) {
 
       function draw() {
+
         var next_time = new Date();
         var time_delta = next_time.getTime() - curr_time.getTime();
 
@@ -84,9 +108,10 @@ var Ticker = function(id, alphabet, rate, init) {
           node.className = "stock_ticker_" + classnum + "_" + internal_id;
           node.childNodes[0].nodeValue = alphabet[classnum];
           node.style.bottom = "0em";
+          if(typeof callback === "function") callback();
         } else {
           var t = time_delta / rate;
-          var pos = rate / 2 > time_delta ? 2*Math.pow(t,2) : -2*Math.pow(t-1,2) + 1;
+          var pos = transition(t, time_delta, rate);
           var classnum = Math.floor(i + pos*num);
           node.className = "stock_ticker_" + classnum + "_" + internal_id;
           node.style.bottom = classnum - i - pos*num + "em";
@@ -130,7 +155,7 @@ var Ticker = function(id, alphabet, rate, init) {
 
   };
 
-  if(init || init === undefined) this.initialize();
+  if(init || init === undefined) this.initialize(callback);
 
   return this;
 }
