@@ -34,6 +34,6 @@ function clock_tick() {
 }
 
 clock_init();
-var counter = new Ticker("time", [':','0','1','2','3','4','5','6','7','8','9'], 750);
+var counter = new Ticker("time", ['0','1','2','3','4','5','6','7','8','9'], 1500);
 clock_tick();
 var tick = setInterval(clock_tick ,1000);

@@ -15,10 +15,17 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
   // current value of the ticker as an array of chars
   var string = [];
+  var str_pos = [];
 
   // internal id used for to account for multiple instantiations
   var internal_id = TickerCount;
   TickerCount++;
+
+  //
+  var busy = false;
+  var interupt = false;
+  var that = this;
+  var param1, param2;
 
   //
   var transition;
@@ -46,6 +53,7 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
       return idx == alphabet.length - 1 ? alphabet[0] : alphabet[Number(idx) + 1];
     };
 
+    var it;
     var div = document.getElementById(id);
     var parent = div, node, child, mask;
     var char, name, style;
@@ -53,15 +61,27 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
     // split the target string into an array
     string = div.textContent.split('');
 
+    // initialize busy and interupt flags
+    for(it in string) {
+      busy[it] = false;
+      interupt[it] = false;
+    }
+
     // clean all children from target node [1]
     while(div.lastChild) div.removeChild(div.lastChild);
 
     // dynamically generate relevant classes for items in alphabet [2]
-    for(var k in alphabet) {
-      name = "stock_ticker_" + k + "_" + internal_id;
+    for(it in alphabet) {
+      name = "stock_ticker_" + it + "_" + internal_id;
       style = document.head.appendChild(document.createElement("style"));
       style.type = "text/css";
-      style.innerHTML = "." + name + ":before {  content: '" + GetNext(k) + "';position: absolute; top: 0em; left: 0em}";
+      style.innerHTML = "." + name + ":before {  content: '" + GetNext(it) + "';position: absolute; top: 0em; left: 0em}";
+    }
+
+    // determine the str_pos of each char in the string
+    var temp_str = alphabet.join(''); // TODO iterate through array not convert to string
+    for(var it in string) {
+      str_pos[it] = temp_str.indexOf(string[it]);
     }
 
     // apply mask to hide overflow pseudo-elements
@@ -70,17 +90,14 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
     parent = mask;
 
     // apply relevant classes and append to the DOM
-    for(var c in string) {
+    for(var it in string) {
       child = document.createElement("TICKER");
-      node = document.createTextNode(string[c]);
+      node = document.createTextNode(string[it]);
       child.appendChild(node);
-      child.className = "stock_ticker_" + alphabet.indexOf(string[c]) + "_" + internal_id;
-      child.id = "stock_ticker_id_" + c + "_" + internal_id;
+      child.className = "stock_ticker_" + alphabet.indexOf(string[it]) + "_" + internal_id;
+      child.id = "stock_ticker_id_" + it + "_" + internal_id;
       parent.appendChild(child);
     }
-
-    // run optional callback function
-    if(typeof callback === "function") callback();
 
     // [1] === http://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
     // [2] === http://stackoverflow.com/questions/1720320/how-to-dynamically-create-css-class-in-javascript-and-apply
@@ -96,45 +113,49 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
   this.update = function(target, callback) {
 
-    function animate(curr, num) {
+    function animate(uhm, idx, curr, num) {
 
-      function draw() {
+      function draw(idxxx) {
+        if(interupt[idxxx]) {
+          busy[idxxx] = false;
+          interupt[idxxx] = false;
+          that.update(param1, param2);
+          return;
+        }
 
         var next_time = new Date();
         var time_delta = next_time.getTime() - curr_time.getTime();
 
+
+        //requestAnimationFrame(draw);
+
         if(time_delta >= rate) {
-          var classnum = Number(i + num);
+          var classnum = Number(uhm + num);
           node.className = "stock_ticker_" + classnum + "_" + internal_id;
           node.childNodes[0].nodeValue = alphabet[classnum];
           node.style.bottom = "0em";
+          str_pos[idxxx] = uhm + num;
+          busy[idxxx] = false;
           if(typeof callback === "function") callback();
         } else {
           var t = time_delta / rate;
           var pos = transition(t, time_delta, rate);
-          var classnum = Math.floor(i + pos*num);
+          var classnum = Math.floor(uhm + pos*num);
           node.className = "stock_ticker_" + classnum + "_" + internal_id;
-          node.style.bottom = classnum - i - pos*num + "em";
+          node.style.bottom = classnum - uhm - pos*num + "em";
           node.childNodes[0].nodeValue = alphabet[classnum];
-          requestAnimationFrame(draw);
-        }
-      }
-
-      // find the matching entry in the alphabet
-      var i;
-      for(var item in alphabet) {
-        if(alphabet[item] == curr) {
-          i = Number(item);
-          break;
+          str_pos[idxxx] = uhm + pos*num;
+          requestAnimationFrame(function(){draw(idxxx);});
         }
       }
 
       // get relevant context
-      var node = document.getElementById("stock_ticker_id_" + char + "_" + internal_id);
+      var node = document.getElementById("stock_ticker_id_" + idx + "_" + internal_id);
 
       // begin animation
       var curr_time = new Date();
-      requestAnimationFrame(draw);
+      busy[idx] = true;
+      requestAnimationFrame(function() { draw(idx); });
     }
 
     /* TODO multiple length strings */
@@ -146,8 +167,19 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
       // compute Levenshtein distance for each char
       var val = document.getElementById("stock_ticker_id_" + char + "_" + internal_id).textContent;
-      var distance = alphabet.indexOf(array[char]) - alphabet.indexOf(string[char]);
-      if(distance !== 0) animate(string[char], distance);
+      var distance = alphabet.indexOf(array[char]) - str_pos[char];
+      if(distance !== 0) {
+        // "spin lock"
+        if(busy[char]) {
+          interupt[char] = true;
+          param1[char] = target;
+          param2[char] = callback;
+          return;
+        }
+
+        var i = Number(str_pos[char]);
+        animate(i, char, str_pos[char], distance);
+      }
     }
 
     // update the value of the string
