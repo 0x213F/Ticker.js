@@ -113,12 +113,12 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
   this.update = function(target, callback) {
 
-    function animate(uhm, idx, curr, num) {
+    function animate(uhm, idx, num) {
 
-      function draw(idxxx) {
-        if(interupt[idxxx]) {
-          busy[idxxx] = false;
-          interupt[idxxx] = false;
+      function draw(idx) {
+        if(interupt[idx]) {
+          busy[idx] = false;
+          interupt[idx] = false;
           that.update(param1, param2);
           return;
         }
@@ -134,8 +134,8 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
           node.className = "stock_ticker_" + classnum + "_" + internal_id;
           node.childNodes[0].nodeValue = alphabet[classnum];
           node.style.bottom = "0em";
-          str_pos[idxxx] = uhm + num;
-          busy[idxxx] = false;
+          str_pos[idx] = uhm + num;
+          busy[idx] = false;
           if(typeof callback === "function") callback();
         } else {
           var t = time_delta / rate;
@@ -144,8 +144,8 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
           node.className = "stock_ticker_" + classnum + "_" + internal_id;
           node.style.bottom = classnum - uhm - pos*num + "em";
           node.childNodes[0].nodeValue = alphabet[classnum];
-          str_pos[idxxx] = uhm + pos*num;
-          requestAnimationFrame(function(){draw(idxxx);});
+          str_pos[idx] = uhm + pos*num;
+          requestAnimationFrame(function(){draw(idx);});
         }
       }
 
@@ -154,7 +154,6 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
       // begin animation
       var curr_time = new Date();
-      busy[idx] = true;
       requestAnimationFrame(function() { draw(idx); });
     }
 
@@ -163,22 +162,23 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
     // handle each char in the string
     var array = target.split('');
-    for(var char in array) {
+    for(var idx in array) {
 
       // compute Levenshtein distance for each char
-      var val = document.getElementById("stock_ticker_id_" + char + "_" + internal_id).textContent;
-      var distance = alphabet.indexOf(array[char]) - str_pos[char];
+      var val = document.getElementById("stock_ticker_id_" + idx + "_" + internal_id).textContent;
+      var distance = alphabet.indexOf(array[idx]) - str_pos[idx];
       if(distance !== 0) {
         // "spin lock"
-        if(busy[char]) {
-          interupt[char] = true;
-          param1[char] = target;
-          param2[char] = callback;
+        if(busy[idx]) {
+          interupt[idx] = true;
+          param1[idx] = target;
+          param2[idx] = callback;
           return;
+        } else {
+          busy[idx] = true;
+          var i = Number(str_pos[idx]);
+          animate(i, idx, distance);
         }
-
-        var i = Number(str_pos[char]);
-        animate(i, char, str_pos[char], distance);
       }
     }
 
