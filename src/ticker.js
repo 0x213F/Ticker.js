@@ -1,4 +1,4 @@
-// Global Variables
+// used to keep track of multiple ticker instantiations
 var TickerCount = 0;
 
 // Constructor
@@ -7,10 +7,10 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
   // set the time it takes for transition
   var rate = rate === undefined ? 500 : rate;
 
-  //
+  // the id of where the ticker will live
   var id = id;
 
-  //
+  // the alphabet
   var alphabet = alphabet;
 
   // current value of the ticker as an array of chars
@@ -18,16 +18,15 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
   var str_pos = [];
 
   // internal id used for to account for multiple instantiations
-  var internal_id = TickerCount;
-  TickerCount++;
+  var internal_id = TickerCount++;
 
   //
-  var busy = false;
-  var interupt = false;
+  var busy = [];
+  var interupt = [];
+  var param1 = [], param2 = [];
   var that = this;
-  var param1, param2;
 
-  //
+  // define the transition function
   var transition;
   if(typeof easing === "function") transition = easing;
   else {
@@ -72,7 +71,7 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
     // dynamically generate relevant classes for items in alphabet [2]
     for(it in alphabet) {
-      name = "stock_ticker_" + it + "_" + internal_id;
+      name = "ticker_" + it + "_" + internal_id;
       style = document.head.appendChild(document.createElement("style"));
       style.type = "text/css";
       style.innerHTML = "." + name + ":before {  content: '" + GetNext(it) + "';position: absolute; top: 0em; left: 0em}";
@@ -94,8 +93,8 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
       child = document.createElement("TICKER");
       node = document.createTextNode(string[it]);
       child.appendChild(node);
-      child.className = "stock_ticker_" + alphabet.indexOf(string[it]) + "_" + internal_id;
-      child.id = "stock_ticker_id_" + it + "_" + internal_id;
+      child.className = "ticker_" + alphabet.indexOf(string[it]) + "_" + internal_id;
+      child.id = "ticker_id_" + it + "_" + internal_id;
       parent.appendChild(child);
     }
 
@@ -115,23 +114,20 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
     function animate(uhm, idx, num) {
 
-      function draw(idx) {
+      function draw(idx, node) {
         if(interupt[idx]) {
           busy[idx] = false;
           interupt[idx] = false;
-          that.update(param1, param2);
+          that.update(param1[idx], param2[idx]);
           return;
         }
 
         var next_time = new Date();
         var time_delta = next_time.getTime() - curr_time.getTime();
 
-
-        //requestAnimationFrame(draw);
-
         if(time_delta >= rate) {
           var classnum = Number(uhm + num);
-          node.className = "stock_ticker_" + classnum + "_" + internal_id;
+          node.className = "ticker_" + classnum + "_" + internal_id;
           node.childNodes[0].nodeValue = alphabet[classnum];
           node.style.bottom = "0em";
           str_pos[idx] = uhm + num;
@@ -141,20 +137,18 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
           var t = time_delta / rate;
           var pos = transition(t, time_delta, rate);
           var classnum = Math.floor(uhm + pos*num);
-          node.className = "stock_ticker_" + classnum + "_" + internal_id;
+          node.className = "ticker_" + classnum + "_" + internal_id;
           node.style.bottom = classnum - uhm - pos*num + "em";
           node.childNodes[0].nodeValue = alphabet[classnum];
           str_pos[idx] = uhm + pos*num;
-          requestAnimationFrame(function(){draw(idx);});
+          requestAnimationFrame(function(){draw(idx, node);});
         }
       }
 
       // get relevant context
-      var node = document.getElementById("stock_ticker_id_" + idx + "_" + internal_id);
-
-      // begin animation
+      var node = document.getElementById("ticker_id_" + idx + "_" + internal_id);
       var curr_time = new Date();
-      requestAnimationFrame(function() { draw(idx); });
+      requestAnimationFrame(function() { draw(idx, node); });
     }
 
     /* TODO multiple length strings */
@@ -165,15 +159,20 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
     for(var idx in array) {
 
       // compute Levenshtein distance for each char
-      var val = document.getElementById("stock_ticker_id_" + idx + "_" + internal_id).textContent;
+      var val = document.getElementById("ticker_id_" + idx + "_" + internal_id).textContent;
       var distance = alphabet.indexOf(array[idx]) - str_pos[idx];
+
+      // only char if there was a change
       if(distance !== 0) {
-        // "spin lock"
+
+        // "spin lock" for if an animation is already happening
         if(busy[idx]) {
           interupt[idx] = true;
           param1[idx] = target;
           param2[idx] = callback;
           return;
+
+        // start the animation
         } else {
           busy[idx] = true;
           var i = Number(str_pos[idx]);
@@ -187,7 +186,7 @@ var Ticker = function(id, alphabet, rate, easing, init, callback) {
 
   };
 
-  if(init || init === undefined) this.initialize(callback);
+  if(init || init === undefined) this.initialize();
 
   return this;
 }

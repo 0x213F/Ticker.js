@@ -36,6 +36,33 @@ To update the ticker with a new value call the following method:
 ```
 price.update("$41.10");
 ```
+
+### Restrictions
+
+The following JavaScript variables should not be used or modified in your code:
+
+```
+var TickerCount = Number( ... );        // used to keep track of multiple ticker instantiations
+var Ticker = function( ... ) { ... }    // main constructor
+```
+
+The following CSS classes and HTML tags should not be used or modified in your code:
+
+```
+/*
+ *
+ * { x | x ∈ Z, 0 <= x < alphabet.length }
+ * { y | y ∈ Z, 0 <= y < string.length   }
+ * { x | x ∈ Z, 0 <= x <= TickerCount    }
+ *
+ */
+
+ticker_mask { ... }                     /* mask pseudo-element overflow             */
+ticker { ... }                          /* main tag                                 */
+.ticker_x_z { ... }                     /* class for each character in the alphabet */
+#ticker_id_y_z { ... }                  /* id for each character in the string      */
+```
+
 ### Limitations
 
 This works best with monospace fonts and can only handle fixed length strings. If update is called while another transition is already in motion it will jump to the next transition.
